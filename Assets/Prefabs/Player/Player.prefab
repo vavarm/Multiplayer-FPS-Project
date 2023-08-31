@@ -597,6 +597,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   speed: 3
+  lookSensitivityX: 0.3
+  lookSensitivityY: 0.3
   groundMask:
     serializedVersion: 2
     m_Bits: 55
@@ -618,6 +620,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   cam: {fileID: 2091534110271498705}
+  cameraRotationLimit: 85
 --- !u!114 &6671974341451271207
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -630,7 +633,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a553cb17010b2403e8523b558bffbc14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
+  syncDirection: 1
   syncMode: 0
   syncInterval: 0
   target: {fileID: 5729245522643747015}

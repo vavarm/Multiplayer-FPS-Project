@@ -11,13 +11,13 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     private float speed = 3f;
 
-    /*
     [SerializeField]
     private float lookSensitivityX = 10f;
 
     [SerializeField]
     private float lookSensitivityY = 80f;
 
+    /*
     [Header("Thruster Options")]
     [SerializeField]
     private float thrusterForce = 1000f;
@@ -54,9 +54,9 @@ public class PlayerController : NetworkBehaviour
         playerControls = new PlayerInputActions();
         move = playerControls.Player.Move;
         move.Enable();
-        /*
         look = playerControls.Player.Look;
         look.Enable();
+        /*
         thruster = playerControls.Player.Thruster;
         thruster.Enable();
         */
@@ -65,7 +65,7 @@ public class PlayerController : NetworkBehaviour
     private void OnDisable()
     {
         move.Disable();
-        //look.Disable();
+        look.Disable();
         //thruster.Disable();
     }
 
@@ -78,7 +78,7 @@ public class PlayerController : NetworkBehaviour
 
     private void Update()
     {
-        if (isServer)
+        if (isLocalPlayer)
         {
             /* Set target position for spring */
             RaycastHit _hit;
@@ -90,9 +90,7 @@ public class PlayerController : NetworkBehaviour
             {
                 joint.targetPosition = new Vector3(0f, 0f, 0f);
             }
-        }
-        if (isLocalPlayer)
-        {
+
             /* Movement input */
             moveDirection = move.ReadValue<Vector2>();
 
@@ -105,6 +103,22 @@ public class PlayerController : NetworkBehaviour
 
             // apply movement
             motor.Move(_velocity);
+
+            /* Look input y rotation */
+            Vector2 _lookDirection = look.ReadValue<Vector2>();
+            float _yRot = _lookDirection.x;
+            Vector3 rotation = new Vector3(0f, _yRot, 0f) * lookSensitivityY;
+
+            // apply rotation
+            motor.Rotate(rotation);
+
+            /* Look input x rotation */
+            float _xRot = _lookDirection.y;
+            float _cameraRotationX = _xRot * lookSensitivityX;
+
+            // apply rotation
+            motor.RotateCamera(_cameraRotationX);
+
         }
     }
 
