@@ -9,7 +9,12 @@ public class PlayerController : NetworkBehaviour
     [Header("Player Options")]
 
     [SerializeField]
-    private float speed = 3f;
+    private float speed = 5f;
+
+    [SerializeField]
+    private float crouchSpeed = 3f;
+    [SerializeField]
+    private bool isCrouching = false;
 
     [SerializeField]
     private float lookSensitivityX = 10f;
@@ -45,6 +50,7 @@ public class PlayerController : NetworkBehaviour
     private PlayerInputActions playerControls;
     private InputAction move;
     private InputAction look;
+    private InputAction crouch;
     private InputAction thruster;
 
     private Vector2 moveDirection = Vector2.zero;
@@ -56,6 +62,8 @@ public class PlayerController : NetworkBehaviour
         move.Enable();
         look = playerControls.Player.Look;
         look.Enable();
+        crouch = playerControls.Player.Crouch;
+        crouch.Enable();
         /*
         thruster = playerControls.Player.Thruster;
         thruster.Enable();
@@ -66,6 +74,7 @@ public class PlayerController : NetworkBehaviour
     {
         move.Disable();
         look.Disable();
+        crouch.Disable();
         //thruster.Disable();
     }
 
@@ -80,6 +89,15 @@ public class PlayerController : NetworkBehaviour
     {
         if (isLocalPlayer)
         {
+            // calculate player state
+            if(crouch.triggered)
+            {
+                isCrouching = true;
+            }
+            else if (crouch.WasReleasedThisFrame())
+            {
+                isCrouching = false;
+            }
             /* Set target position for spring */
             RaycastHit _hit;
             if (Physics.SphereCast(transform.position, 0.5f, Vector3.down, out _hit, 10f, groundMask))
@@ -98,8 +116,10 @@ public class PlayerController : NetworkBehaviour
             Vector3 _movementHorizontal = transform.right * moveDirection.x;
             Vector3 _movementVertical = transform.forward * moveDirection.y;
 
+            float movementSpeed = isCrouching ? crouchSpeed : speed;
+
             // final movement vector
-            Vector3 _velocity = (_movementHorizontal + _movementVertical) * speed;
+            Vector3 _velocity = (_movementHorizontal + _movementVertical) * movementSpeed;
 
             // apply movement
             motor.Move(_velocity);
