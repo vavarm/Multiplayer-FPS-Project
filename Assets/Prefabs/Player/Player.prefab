@@ -422,7 +422,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7132653284163968481}
-  m_Material: {fileID: 13400000, guid: 44e6b6ff1073e354199cf85955467639, type: 2}
+  m_Material: {fileID: 13400000, guid: 66fd3b31c2c216946be0fe66f288a79a, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -596,9 +596,14 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  speed: 3
+  speed: 5
+  crouchSpeed: 3
+  thrusterSpeed: 8
   lookSensitivityX: 0.3
   lookSensitivityY: 0.3
+  thrusterForce: 1000
+  thrusterFuelBurnSpeed: 0.3
+  thrusterFuelRegenSpeed: 0.1
   groundMask:
     serializedVersion: 2
     m_Bits: 55

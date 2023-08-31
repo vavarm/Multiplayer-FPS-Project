@@ -14,6 +14,7 @@ public class PlayerMotor : NetworkBehaviour
     private float currentCameraRotationX = 0f;
     [SerializeField]
     private float cameraRotationLimit = 85f;
+    private Vector3 thrusterVelocity;
 
     private Rigidbody rb;
 
@@ -38,6 +39,11 @@ public class PlayerMotor : NetworkBehaviour
         cameraRotationX = _cameraRotationX;
     }
 
+    public void ApplyThruster(Vector3 _thrusterVelocity)
+    {
+        thrusterVelocity = _thrusterVelocity;
+    }
+
     private void FixedUpdate()
     {
         if(isLocalPlayer)
@@ -52,6 +58,10 @@ public class PlayerMotor : NetworkBehaviour
         if (velocity != Vector3.zero)
         {
             rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+        }
+        if (thrusterVelocity != Vector3.zero)
+        {
+            rb.AddForce(thrusterVelocity * Time.fixedDeltaTime, ForceMode.Acceleration);
         }
     }
 

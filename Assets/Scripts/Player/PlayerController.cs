@@ -13,8 +13,9 @@ public class PlayerController : NetworkBehaviour
 
     [SerializeField]
     private float crouchSpeed = 3f;
-    [SerializeField]
     private bool isCrouching = false;
+    [SerializeField]
+    private float thrusterSpeed = 8f;
 
     [SerializeField]
     private float lookSensitivityX = 10f;
@@ -22,7 +23,6 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     private float lookSensitivityY = 80f;
 
-    /*
     [Header("Thruster Options")]
     [SerializeField]
     private float thrusterForce = 1000f;
@@ -30,9 +30,7 @@ public class PlayerController : NetworkBehaviour
     private float thrusterFuelBurnSpeed = 1f;
     [SerializeField]
     private float thrusterFuelRegenSpeed = 0.3f;
-    private float thrusterFuelAmount = 1f;
-    public float ThrusterFuelAmount => thrusterFuelAmount;
-    */
+    public float thrusterFuelAmount { get; private set; } = 1f;
 
     [Header("Joint Options")]
     [SerializeField]
@@ -64,10 +62,8 @@ public class PlayerController : NetworkBehaviour
         look.Enable();
         crouch = playerControls.Player.Crouch;
         crouch.Enable();
-        /*
         thruster = playerControls.Player.Thruster;
         thruster.Enable();
-        */
     }
 
     private void OnDisable()
@@ -75,7 +71,7 @@ public class PlayerController : NetworkBehaviour
         move.Disable();
         look.Disable();
         crouch.Disable();
-        //thruster.Disable();
+        thruster.Disable();
     }
 
     private void Start()
@@ -90,7 +86,8 @@ public class PlayerController : NetworkBehaviour
         if (isLocalPlayer)
         {
             // calculate player state
-            if(crouch.triggered)
+            bool isThrusterHeld = thruster.ReadValue<float>() > 0f;
+            if (crouch.triggered && !isThrusterHeld)
             {
                 isCrouching = true;
             }
@@ -116,7 +113,11 @@ public class PlayerController : NetworkBehaviour
             Vector3 _movementHorizontal = transform.right * moveDirection.x;
             Vector3 _movementVertical = transform.forward * moveDirection.y;
 
-            float movementSpeed = isCrouching ? crouchSpeed : speed;
+            // calculate movement speed: if thruster is held and fuel is available, use thrusterSpeed, else use crouchSpeed if crouching, else use speed
+            float movementSpeed = isThrusterHeld && thrusterFuelAmount >= 0.01f ? thrusterSpeed : (isCrouching ? crouchSpeed : speed);
+            Debug.Log(movementSpeed);
+            Debug.Log("isThrusterHeld: " + isThrusterHeld);
+            Debug.Log("isCrouching: " + isCrouching);
 
             // final movement vector
             Vector3 _velocity = (_movementHorizontal + _movementVertical) * movementSpeed;
@@ -138,6 +139,29 @@ public class PlayerController : NetworkBehaviour
 
             // apply rotation
             motor.RotateCamera(_cameraRotationX);
+
+            /* Thruster */
+
+            // calculate thrusterVelocity
+            Vector3 thrusterVelocity = Vector3.zero;
+            if (isThrusterHeld && thrusterFuelAmount > 0f)
+            {
+                thrusterFuelAmount -= thrusterFuelBurnSpeed * Time.deltaTime;
+                if (thrusterFuelAmount >= 0.01f)
+                {
+                    thrusterVelocity = Vector3.up * thrusterForce;
+                    SetJointSettings(0f);
+                }
+            }
+            else
+            {
+                thrusterFuelAmount += thrusterFuelRegenSpeed * Time.deltaTime;
+                SetJointSettings(jointSpring);
+            }
+
+            thrusterFuelAmount = Mathf.Clamp(thrusterFuelAmount, 0f, 1f);
+
+            motor.ApplyThruster(thrusterVelocity);
 
         }
     }
