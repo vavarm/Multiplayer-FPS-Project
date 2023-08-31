@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(ConfigurableJoint))]
 [RequireComponent(typeof(PlayerMotor))]
+[RequireComponent(typeof(Animator))]
 public class PlayerController : NetworkBehaviour
 {
     [Header("Player Options")]
@@ -43,6 +44,7 @@ public class PlayerController : NetworkBehaviour
     [Header("Player Components")]
     private ConfigurableJoint joint;
     private PlayerMotor motor;
+    private Animator animator;
 
     [Header("Player Input")]
     private PlayerInputActions playerControls;
@@ -78,6 +80,7 @@ public class PlayerController : NetworkBehaviour
     {
         joint = GetComponent<ConfigurableJoint>();
         motor = GetComponent<PlayerMotor>();
+        animator = GetComponent<Animator>();
         SetJointSettings(jointSpring);
     }
 
@@ -115,12 +118,12 @@ public class PlayerController : NetworkBehaviour
 
             // calculate movement speed: if thruster is held and fuel is available, use thrusterSpeed, else use crouchSpeed if crouching, else use speed
             float movementSpeed = isThrusterHeld && thrusterFuelAmount >= 0.01f ? thrusterSpeed : (isCrouching ? crouchSpeed : speed);
-            Debug.Log(movementSpeed);
-            Debug.Log("isThrusterHeld: " + isThrusterHeld);
-            Debug.Log("isCrouching: " + isCrouching);
 
             // final movement vector
             Vector3 _velocity = (_movementHorizontal + _movementVertical) * movementSpeed;
+
+            // update the thruster animation
+            CmdUpdatePlayerAnimation(moveDirection, Time.deltaTime);
 
             // apply movement
             motor.Move(_velocity);
@@ -173,5 +176,18 @@ public class PlayerController : NetworkBehaviour
             positionSpring = _jointSpring,
             maximumForce = jointMaxForce
         };
+    }
+
+    [Command]
+    private void CmdUpdatePlayerAnimation(Vector2 _moveDirection, float _deltaTime)
+    {
+        RpcUpdatePlayerAnimation(_moveDirection, _deltaTime);
+    }
+
+    [ClientRpc]
+    private void RpcUpdatePlayerAnimation(Vector2 _moveDirection, float _deltaTime)
+    {
+        if(animator == null) return;
+        animator.SetFloat("ForwardVelocity", _moveDirection.y, 0.2f, _deltaTime);
     }
 }
