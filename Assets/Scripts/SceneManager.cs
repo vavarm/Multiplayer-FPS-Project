@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SceneManager : MonoBehaviour
@@ -16,6 +14,9 @@ public class SceneManager : MonoBehaviour
 
     [SerializeField] private string playerLayerName = "Player";
 
+    [SerializeField]
+    private GameObject sceneCamera;
+
     private void Awake()
     {
         instance = this;
@@ -31,5 +32,14 @@ public class SceneManager : MonoBehaviour
         {
             Physics.IgnoreLayerCollision(LayerMask.NameToLayer(playerLayerName), LayerMask.NameToLayer(playerLayerName), true);
         }
+    }
+
+    public void SetSceneCamera(bool _state)
+    {
+        if (sceneCamera == null)
+        {
+            return;
+        }
+        sceneCamera.SetActive(_state);
     }
 }
