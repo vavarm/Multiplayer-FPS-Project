@@ -1,36 +1,39 @@
 using UnityEngine;
-using Mirror;
+using FishNet.Object;
+using System.Collections;
 
 public class PlayerSetup : NetworkBehaviour
 {
 
     [SerializeField] private GameObject playerCamera;
 
-    void Start()
+    public override void OnStartClient()
     {
-        if (!isLocalPlayer)
+        base.OnStartClient();
+        Initialize();
+    }
+
+    private void Initialize()
+    {
+        if (!base.IsOwner)
         {
-            // disable player camera
+            // Disable player camera
             playerCamera.SetActive(false);
-            return;
-        }
-        else if (isServerOnly)
+        } else
         {
-            // disable player camera
-            playerCamera.SetActive(false);
+            // isHost or isLocalPlayer
+            // Disable scene camera
+            LocalSceneManager.instance.SetSceneCamera(false);
         }
-        // isHost or isLocalPlayer
-        // disable scene camera
-        SceneManager.instance.SetSceneCamera(false);
     }
 
     private void OnDisable()
     {
-        if (!isLocalPlayer)
+        if (!base.IsOwner)
         {
             return;
         }
         // enable scene camera
-        SceneManager.instance.SetSceneCamera(true);
+        LocalSceneManager.instance.SetSceneCamera(true);
     }
 }

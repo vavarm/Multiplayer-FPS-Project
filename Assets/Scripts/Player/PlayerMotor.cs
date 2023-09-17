@@ -1,6 +1,5 @@
-using Mirror;
+using FishNet.Object;
 using UnityEngine;
-using UnityEngine.Analytics;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMotor : NetworkBehaviour
@@ -46,11 +45,10 @@ public class PlayerMotor : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if(isLocalPlayer)
-        {
-            PerformMovement();
-            PerformRotation();
-        }
+        if (!base.IsOwner)
+            return;
+        PerformMovement();
+        PerformRotation();
     }
 
     private void PerformMovement()

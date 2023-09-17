@@ -1,6 +1,7 @@
 using UnityEngine;
-using Mirror;
+using FishNet.Object;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(ConfigurableJoint))]
 [RequireComponent(typeof(PlayerMotor))]
@@ -11,16 +12,12 @@ public class PlayerController : NetworkBehaviour
 
     [SerializeField]
     private float speed = 5f;
-
     [SerializeField]
     private float crouchSpeed = 3f;
-    private bool isCrouching = false;
     [SerializeField]
     private float thrusterSpeed = 8f;
-
     [SerializeField]
     private float lookSensitivityX = 10f;
-
     [SerializeField]
     private float lookSensitivityY = 80f;
 
@@ -47,34 +44,45 @@ public class PlayerController : NetworkBehaviour
     private Animator animator;
 
     [Header("Player Input")]
-    private PlayerInputActions playerControls;
-    private InputAction move;
-    private InputAction look;
-    private InputAction crouch;
-    private InputAction thruster;
-
     private Vector2 moveDirection = Vector2.zero;
+    private Vector2 lookDirection = Vector2.zero;
+    private bool isThrusterHeld = false;
+    private bool isCrouching = false;
 
-    private void OnEnable()
+    public void OnMove(InputAction.CallbackContext context)
     {
-        playerControls = new PlayerInputActions();
-        move = playerControls.Player.Move;
-        move.Enable();
-        look = playerControls.Player.Look;
-        look.Enable();
-        crouch = playerControls.Player.Crouch;
-        crouch.Enable();
-        thruster = playerControls.Player.Thruster;
-        thruster.Enable();
+        moveDirection = context.ReadValue<Vector2>();
     }
 
-    private void OnDisable()
+    public void OnLook(InputAction.CallbackContext context)
     {
-        move.Disable();
-        look.Disable();
-        crouch.Disable();
-        thruster.Disable();
+        lookDirection = context.ReadValue<Vector2>();
     }
+
+    public void OnThruster(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            isThrusterHeld = true;
+        }
+        else if (context.canceled)
+        {
+            isThrusterHeld = false;
+        }
+    }
+
+    public void OnCrouch(InputAction.CallbackContext context)
+    {
+        if (context.started && !isThrusterHeld)
+        {
+            isCrouching = true;
+        }
+        else if (context.canceled)
+        {
+            isCrouching = false;
+        }
+    }
+
 
     private void Start()
     {
@@ -86,87 +94,78 @@ public class PlayerController : NetworkBehaviour
 
     private void Update()
     {
-        if (isLocalPlayer)
+
+        ////// Ground check //////
+
+        RaycastHit _hit;
+        if (Physics.SphereCast(transform.position, 0.5f, Vector3.down, out _hit, 10f, groundMask))
         {
-            // calculate player state
-            bool isThrusterHeld = thruster.ReadValue<float>() > 0f;
-            if (crouch.triggered && !isThrusterHeld)
-            {
-                isCrouching = true;
-            }
-            else if (crouch.WasReleasedThisFrame())
-            {
-                isCrouching = false;
-            }
-            /* Set target position for spring */
-            RaycastHit _hit;
-            if (Physics.SphereCast(transform.position, 0.5f, Vector3.down, out _hit, 10f, groundMask))
-            {
-                joint.targetPosition = new Vector3(0f, -_hit.point.y, 0f);
-            }
-            else
-            {
-                joint.targetPosition = new Vector3(0f, 0f, 0f);
-            }
-
-            /* Movement input */
-            moveDirection = move.ReadValue<Vector2>();
-
-            // calculate movement velocity as a 3D vector
-            Vector3 _movementHorizontal = transform.right * moveDirection.x;
-            Vector3 _movementVertical = transform.forward * moveDirection.y;
-
-            // calculate movement speed: if thruster is held and fuel is available, use thrusterSpeed, else use crouchSpeed if crouching, else use speed
-            float movementSpeed = isThrusterHeld && thrusterFuelAmount >= 0.01f ? thrusterSpeed : (isCrouching ? crouchSpeed : speed);
-
-            // final movement vector
-            Vector3 _velocity = (_movementHorizontal + _movementVertical) * movementSpeed;
-
-            // update the thruster animation
-            CmdUpdatePlayerAnimation(moveDirection, Time.deltaTime);
-
-            // apply movement
-            motor.Move(_velocity);
-
-            /* Look input y rotation */
-            Vector2 _lookDirection = look.ReadValue<Vector2>();
-            float _yRot = _lookDirection.x;
-            Vector3 rotation = new Vector3(0f, _yRot, 0f) * lookSensitivityY;
-
-            // apply rotation
-            motor.Rotate(rotation);
-
-            /* Look input x rotation */
-            float _xRot = _lookDirection.y;
-            float _cameraRotationX = _xRot * lookSensitivityX;
-
-            // apply rotation
-            motor.RotateCamera(_cameraRotationX);
-
-            /* Thruster */
-
-            // calculate thrusterVelocity
-            Vector3 thrusterVelocity = Vector3.zero;
-            if (isThrusterHeld && thrusterFuelAmount > 0f)
-            {
-                thrusterFuelAmount -= thrusterFuelBurnSpeed * Time.deltaTime;
-                if (thrusterFuelAmount >= 0.01f)
-                {
-                    thrusterVelocity = Vector3.up * thrusterForce;
-                    SetJointSettings(0f);
-                }
-            }
-            else
-            {
-                thrusterFuelAmount += thrusterFuelRegenSpeed * Time.deltaTime;
-                SetJointSettings(jointSpring);
-            }
-
-            thrusterFuelAmount = Mathf.Clamp(thrusterFuelAmount, 0f, 1f);
-
-            motor.ApplyThruster(thrusterVelocity);
-
+            joint.targetPosition = new Vector3(0f, -_hit.point.y, 0f);
         }
+        else
+        {
+            joint.targetPosition = new Vector3(0f, 0f, 0f);
+        }
+
+        ////// Movement calculation //////
+
+        // calculate movement velocity as a 3D vector
+        Vector3 _movementHorizontal = transform.right * moveDirection.x;
+        Vector3 _movementVertical = transform.forward * moveDirection.y;
+
+        // calculate movement speed: if thruster is held and fuel is available, use thrusterSpeed, else use crouchSpeed if crouching, else use speed
+        float movementSpeed = isThrusterHeld && thrusterFuelAmount >= 0.01f ? thrusterSpeed : (isCrouching ? crouchSpeed : speed);
+
+        // final movement vector
+        Vector3 _velocity = (_movementHorizontal + _movementVertical) * movementSpeed;
+
+        ////// Rotation calculation //////
+
+        float _yRot = lookDirection.x;
+        Vector3 rotation = new Vector3(0f, _yRot, 0f) * lookSensitivityY;
+
+        ////// Camera rotation calculation //////
+
+        float _xRot = lookDirection.y;
+        float _cameraRotationX = _xRot * lookSensitivityX;
+
+        ////// Thruster calculation //////
+
+        // calculate thrusterVelocity
+        Vector3 thrusterVelocity = Vector3.zero;
+        if (isThrusterHeld && thrusterFuelAmount > 0f)
+        {
+            thrusterFuelAmount -= thrusterFuelBurnSpeed * Time.deltaTime;
+            if (thrusterFuelAmount >= 0.01f)
+            {
+                thrusterVelocity = Vector3.up * thrusterForce;
+                SetJointSettings(0f);
+            }
+        }
+        else
+        {
+            thrusterFuelAmount += thrusterFuelRegenSpeed * Time.deltaTime;
+            SetJointSettings(jointSpring);
+        }
+
+        thrusterFuelAmount = Mathf.Clamp(thrusterFuelAmount, 0f, 1f);
+
+        if (!base.IsOwner)
+            return;
+
+        // update the thruster animation
+        animator.SetFloat("ForwardVelocity", moveDirection.y, 0.1f, Time.deltaTime);
+
+        // apply movement
+        motor.Move(_velocity);
+
+        // apply rotation
+        motor.Rotate(rotation);
+
+        // apply rotation
+        motor.RotateCamera(_cameraRotationX);
+
+        motor.ApplyThruster(thrusterVelocity);
     }
 
     private void SetJointSettings(float _jointSpring)
@@ -176,18 +175,5 @@ public class PlayerController : NetworkBehaviour
             positionSpring = _jointSpring,
             maximumForce = jointMaxForce
         };
-    }
-
-    [Command]
-    private void CmdUpdatePlayerAnimation(Vector2 _moveDirection, float _deltaTime)
-    {
-        RpcUpdatePlayerAnimation(_moveDirection, _deltaTime);
-    }
-
-    [ClientRpc]
-    private void RpcUpdatePlayerAnimation(Vector2 _moveDirection, float _deltaTime)
-    {
-        if(animator == null) return;
-        animator.SetFloat("ForwardVelocity", _moveDirection.y, 0.2f, _deltaTime);
     }
 }
