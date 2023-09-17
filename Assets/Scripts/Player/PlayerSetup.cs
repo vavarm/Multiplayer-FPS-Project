@@ -27,8 +27,9 @@ public class PlayerSetup : NetworkBehaviour
         }
     }
 
-    private void OnDisable()
+    public override void OnStopClient()
     {
+        base.OnStopClient();
         if (!base.IsOwner)
         {
             return;
