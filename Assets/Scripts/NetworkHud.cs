@@ -71,8 +71,7 @@ public class NetworkHud : MonoBehaviour
         if(networkManager.IsClient)
         {
             networkManager.ClientManager.StopConnection();
-        }
-        else if(networkManager.IsServer)
+        } else
         {
             networkManager.ClientManager.StartConnection();
         }
