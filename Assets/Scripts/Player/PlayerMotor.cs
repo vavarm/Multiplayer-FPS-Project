@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerMotor : NetworkBehaviour
 {
     [SerializeField]
-    private Camera cam;
+    private Camera playerCamera;
 
     private Vector3 velocity = Vector3.zero;
     private Vector3 rotation = Vector3.zero;
@@ -21,6 +21,10 @@ public class PlayerMotor : NetworkBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        if (playerCamera == null)
+        {
+            Debug.LogError("PlayerMotor: No camera referenced!", this);
+        }
     }
 
     public void Move(Vector3 _velocity)
@@ -69,14 +73,14 @@ public class PlayerMotor : NetworkBehaviour
         {
             rb.MoveRotation(rb.rotation * Quaternion.Euler(rotation));
         }
-        if(cam != null)
+        if(playerCamera != null)
         {
             // Set our rotation and clamp it
             currentCameraRotationX -= cameraRotationX;
             currentCameraRotationX = Mathf.Clamp(currentCameraRotationX, -cameraRotationLimit, cameraRotationLimit);
 
             // Apply our rotation to the transform of our camera
-            cam.transform.localEulerAngles = new Vector3(currentCameraRotationX, 0f, 0f);
+            playerCamera.transform.localEulerAngles = new Vector3(currentCameraRotationX, 0f, 0f);
         }
     }
 }

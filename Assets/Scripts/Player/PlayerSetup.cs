@@ -1,12 +1,14 @@
 using UnityEngine;
 using FishNet.Object;
 using System.Collections;
+using FishNet.Connection;
 
 public class PlayerSetup : NetworkBehaviour
 {
 
-    [SerializeField] private GameObject playerCamera;
+    [SerializeField] private Camera playerCamera;
 
+    // Initialize the player on clients
     public override void OnStartClient()
     {
         base.OnStartClient();
@@ -15,26 +17,25 @@ public class PlayerSetup : NetworkBehaviour
 
     private void Initialize()
     {
-        if (!base.IsOwner)
+        if (base.IsOwner)
         {
-            // Disable player camera
-            playerCamera.SetActive(false);
+            // enable scene camera
+            LocalSceneManager.instance.SetSceneCamera(false);
+            playerCamera.enabled = true;
         } else
         {
-            // isHost or isLocalPlayer
-            // Disable scene camera
-            LocalSceneManager.instance.SetSceneCamera(false);
+            // disable player camera
+            playerCamera.enabled = false;
         }
     }
 
     public override void OnStopClient()
     {
         base.OnStopClient();
-        if (!base.IsOwner)
+        if (base.IsOwner)
         {
-            return;
+            // enable scene camera
+            LocalSceneManager.instance.SetSceneCamera(true);
         }
-        // enable scene camera
-        LocalSceneManager.instance.SetSceneCamera(true);
     }
 }
