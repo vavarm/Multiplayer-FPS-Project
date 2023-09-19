@@ -1127,9 +1127,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weapons:
   - {fileID: 11400000, guid: 38b18c36bc1b38242aa4e81db90b67d4, type: 2}
-  shootAudioClips: []
-  reloadAudioClips: []
-  hitAudioClips: []
 --- !u!4 &1495644506
 Transform:
   m_ObjectHideFlags: 0
@@ -1197,6 +1194,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NetworkManager
       objectReference: {fileID: 0}
+    - target: {fileID: 7443408887813606060, guid: c3bf76e5bf668964681c6794abe26f45, type: 3}
+      propertyPath: Spawns.Array.data[0]
+      value: 
+      objectReference: {fileID: 795004181}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

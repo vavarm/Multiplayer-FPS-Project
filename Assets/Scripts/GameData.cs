@@ -8,12 +8,6 @@ public class GameData : MonoBehaviour
 
     [SerializeField]
     public Weapon[] weapons;
-    [SerializeField]
-    public AudioClip[] shootAudioClips;
-    [SerializeField]
-    public AudioClip[] reloadAudioClips;
-    [SerializeField]
-    public AudioClip[] hitAudioClips;
 
     private void Awake()
     {
