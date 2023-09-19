@@ -22,10 +22,18 @@ public class PlayerSetup : NetworkBehaviour
             // enable scene camera
             LocalSceneManager.instance.SetSceneCamera(false);
             playerCamera.enabled = true;
+            if(playerCamera.TryGetComponent(out AudioListener _audioListener))
+            {
+                _audioListener.enabled = true;
+            }
         } else
         {
             // disable player camera
             playerCamera.enabled = false;
+            if (playerCamera.TryGetComponent(out AudioListener _audioListener))
+            {
+                _audioListener.enabled = true;
+            }
         }
     }
 
